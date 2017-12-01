@@ -142,20 +142,29 @@ func GetRaceDetailResult(raceResult []RaceList) {
 			/* ------------- Parse the details of track ------------------------ */
 			var trackObj Track
 			races, _ := jsonParsed.Path("list.track.races").Children()
-			raceNumber := strings.Split(races[0].Path("raceTitle").Data().(string), " ")[1]
-			raceDistance := races[0].Path("distance").Data().(string)
+			
+			myRace := races[0]
+			for _, r := range races {
+				if r.Path("raceId").Data().(string) == subRaceObj.RaceId {
+					myRace = r
+					break
+				}
+			}
+
+			raceNumber := strings.Split(myRace.Path("raceTitle").Data().(string), " ")[1]
+			raceDistance := myRace.Path("distance").Data().(string)
 
 			mediaURL := ""
-			if len(races[0].Path("videoid").Data().(string)) > 0 {
+			if len(myRace.Path("videoid").Data().(string)) > 0 {
 				mediaURL = "http://greyhoundbet.racingpost.com/#result-video/"
 				mediaURL += "race_id=" + subRaceObj.RaceId
 				mediaURL += "&track_id=" + raceObj.TrackId
 				mediaURL += "&r_date=" + subRaceObj.raceDate
 	
-				mediaURL += "&video_id=" + races[0].Path("videoid").Data().(string)
-				mediaURL += "&clip_id=" + races[0].Path("clipId").Data().(string)
-				mediaURL += "&start_sec=" + races[0].Path("startSec").Data().(string)
-				mediaURL += "&end_sec=" + races[0].Path("endSec").Data().(string)
+				mediaURL += "&video_id=" + myRace.Path("videoid").Data().(string)
+				mediaURL += "&clip_id=" + myRace.Path("clipId").Data().(string)
+				mediaURL += "&start_sec=" + myRace.Path("startSec").Data().(string)
+				mediaURL += "&end_sec=" + myRace.Path("endSec").Data().(string)
 			}
 
 			trackObj.Number = raceNumber
