@@ -13,6 +13,25 @@ import (
 	"strings"
 )
 
+type DogForm struct {
+	Date 			string
+	TrackName		string
+	Distance		string
+	Bends			string
+	FinishPosition	string
+	CompetitorName 	string
+	Weight			string
+	FinishTime		string
+}
+
+type Dog struct {
+	Name 			string
+	SireName		string
+	DamName			string
+
+	Forms			[]DogForm
+}
+
 type TrackResult struct {
 	Position		string
 	Name 			string
@@ -112,7 +131,7 @@ func GetRaceResult() []RaceList {
 
 			raceList = append(raceList, raceObj);
 
-			// return raceList;
+			return raceList;
 		}
 	}
 
@@ -198,6 +217,59 @@ func GetRaceDetailResult(subRaceObj SubRace, trackId string) SubRace{
 
 }
 
+func GetDogDetail(raceId string, trackId string, dogId string, r_date string, r_time string) Dog {
+
+	var dogObj Dog
+
+	paramStr := "&race_id=" + raceId
+	paramStr += "&track_id=" + trackId
+	paramStr += "&dog_id=" + dogId
+	paramStr += "&r_date=" + r_date
+	paramStr += "&r_time=" + url.QueryEscape(r_time)
+
+	url := "http://greyhoundbet.racingpost.com/results/blocks.sd?blocks=results-dog-details&_=1" + paramStr
+	fmt.Println("====================================================");
+	fmt.Println("URL : ", url);
+	fmt.Println("Real URL : ", "http://greyhoundbet.racingpost.com/#results-dog/" + paramStr);
+
+	getResBody := sendGetRequestWithURL(url)
+	if getResBody == nil {
+		fmt.Println("API call error : " + url)
+		return dogObj
+	}
+
+	jsonParsed, jsonErr := gabs.ParseJSON(getResBody)
+	if jsonErr != nil {
+		fmt.Println(jsonErr)
+		return dogObj
+	}
+
+	/* ----------------------- Parse Dog Info -------------------------- */
+
+	dogInfo 		:= jsonParsed.Path("results-dog-details.dogInfo")
+	dogObj.Name 	= dogInfo.Path("dogName").Data().(string)
+	dogObj.SireName = dogInfo.Path("sireName").Data().(string)
+	dogObj.DamName 	= dogInfo.Path("damName").Data().(string)
+	
+	formsInfo, _ := jsonParsed.Path("results-dog-details.forms").Children()
+	for _, form := range formsInfo {
+
+		var dogFormObj DogForm
+		dogFormObj.Date 			= form.Path("rFormDatetime").Data().(string)
+		dogFormObj.TrackName 	 	= form.Path("trackShortName").Data().(string)
+		dogFormObj.Distance			= form.Path("distMetre").Data().(string)
+		dogFormObj.Bends			= form.Path("bndPos").Data().(string)
+		dogFormObj.FinishPosition	= form.Path("rOutcomeDesc").Data().(string)
+		dogFormObj.CompetitorName 	= form.Path("otherDogName").Data().(string)
+		dogFormObj.Weight			= form.Path("weight").Data().(string)
+		dogFormObj.FinishTime		= form.Path("winnersTimeS").Data().(string)
+
+		dogObj.Forms = append(dogObj.Forms, dogFormObj)
+	}
+
+	return dogObj
+}
+
 func main() {
 
 	raceResult := GetRaceResult()
@@ -208,5 +280,14 @@ func main() {
 	}
 
 	fmt.Println("-------------------raceResult : ", raceResult[0])
+
+	race := raceResult[0]
+	subRace := race.Races[0]
+	track := subRace.TrackDetail
+	trackResult := track.Results[0]
+
+
+	dogInfo := GetDogDetail( subRace.RaceId, race.TrackId, trackResult.DogId, subRace.raceDate, subRace.rTime)
+	fmt.Println("Dpg Infot : ", dogInfo)
 
 }
