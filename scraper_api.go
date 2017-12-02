@@ -37,6 +37,8 @@ type TrackResult struct {
 	Name 			string
 	FinishTime		string
 	DogId			string
+
+	Dog				Dog
 }
 
 type Track struct {
@@ -130,8 +132,6 @@ func GetRaceResult() []RaceList {
 			}
 
 			raceList = append(raceList, raceObj);
-
-			return raceList;
 		}
 	}
 
@@ -208,6 +208,9 @@ func GetRaceDetailResult(subRaceObj SubRace, trackId string) SubRace{
 		trackResultObj.FinishTime = time
 		trackResultObj.DogId = dogId
 
+		dogObj := GetDogDetail( subRaceObj.RaceId, trackId, dogId, subRaceObj.raceDate, subRaceObj.rTime)
+		trackResultObj.Dog = dogObj
+
 		trackObj.Results = append(trackObj.Results, trackResultObj)
 	}
 
@@ -228,9 +231,9 @@ func GetDogDetail(raceId string, trackId string, dogId string, r_date string, r_
 	paramStr += "&r_time=" + url.QueryEscape(r_time)
 
 	url := "http://greyhoundbet.racingpost.com/results/blocks.sd?blocks=results-dog-details&_=1" + paramStr
-	fmt.Println("====================================================");
-	fmt.Println("URL : ", url);
-	fmt.Println("Real URL : ", "http://greyhoundbet.racingpost.com/#results-dog/" + paramStr);
+	// fmt.Println("====================================================");
+	// fmt.Println("URL : ", url);
+	// fmt.Println("Real URL : ", "http://greyhoundbet.racingpost.com/#results-dog/" + paramStr);
 
 	getResBody := sendGetRequestWithURL(url)
 	if getResBody == nil {
@@ -280,14 +283,5 @@ func main() {
 	}
 
 	fmt.Println("-------------------raceResult : ", raceResult[0])
-
-	race := raceResult[0]
-	subRace := race.Races[0]
-	track := subRace.TrackDetail
-	trackResult := track.Results[0]
-
-
-	dogInfo := GetDogDetail( subRace.RaceId, race.TrackId, trackResult.DogId, subRace.raceDate, subRace.rTime)
-	fmt.Println("Dpg Infot : ", dogInfo)
 
 }
