@@ -439,7 +439,7 @@ func PostAllPayloadsWithRaceResult(raceResult []Structs.RaceList) {
 			//Race Data
 			raceDataObj := make(map[string]interface{})
 			raceDataObj["race_class"] 		= subRaceObj.RaceClass
-			raceDataObj["distance_unit"] 	= "yards"
+			raceDataObj["distance_unit"] 	= "meters"
 
 			distanceNumber, _ := strconv.Atoi(subRaceObj.Distance)
 			raceDataObj["distance"] 		= distanceNumber
