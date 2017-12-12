@@ -458,7 +458,12 @@ func PostAllPayloadsWithRaceResult(raceResult []Structs.RaceList) {
 				competitor["name"] 			= trackDetailObj.Name
 				competitor["birth_date"] 	= trackDetailObj.BirthDate
 				competitor["colour"] 		= trackDetailObj.Color
-				competitor["sex"] 			= trackDetailObj.DogSex
+
+				if trackDetailObj.DogSex == "D" {
+					competitor["sex"] 		= "DOG"
+				} else {
+					competitor["sex"] 		= "BITCH"
+				}
 
 					sireObj := make(map[string]string)
 					sireObj["name"] = trackDetailObj.DogSireName
