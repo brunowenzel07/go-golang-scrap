@@ -49,6 +49,7 @@ type SubRace struct {
 	RaceDate		string
 	RaceTitle		string
 	RaceClass		string
+	RacePrize		string
 	Distance		string
 	TrackCondition	string
 

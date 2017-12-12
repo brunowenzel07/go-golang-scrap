@@ -94,6 +94,7 @@ func GetRaceResult() []Structs.RaceList {
 				subRaceObj.RTime = strings.Split(subRace.Path("rTime").Data().(string), " ")[1]
 				subRaceObj.RaceDate = strings.Split(subRace.Path("raceDate").Data().(string), " ")[0]
 				subRaceObj.RaceClass = subRace.Path("raceGrade").Data().(string)
+				subRaceObj.RacePrize = subRace.Path("racePrize").Data().(string)
 				subRaceObj.Distance = subRace.Path("distance").Data().(string)
 				subRaceObj.TrackCondition = subRace.Path("raceType").Data().(string)
 
@@ -438,8 +439,11 @@ func PostAllPayloadsWithRaceResult(raceResult []Structs.RaceList) {
 
 			//Race Data
 			raceDataObj := make(map[string]interface{})
-			raceDataObj["race_class"] 		= subRaceObj.RaceClass
-			raceDataObj["distance_unit"] 	= "meters"
+			raceDataObj["race_class"] 			= subRaceObj.RaceClass
+			raceDataObj["distance_unit"] 		= "meters"
+			prizeNumber, _ := strconv.Atoi(subRaceObj.RacePrize)
+			raceDataObj["prize_money"] 			= prizeNumber
+			raceDataObj["prize_money_currency"] = "EUR"
 
 			distanceNumber, _ := strconv.Atoi(subRaceObj.Distance)
 			raceDataObj["distance"] 		= distanceNumber
@@ -505,7 +509,7 @@ func PostAllPayloadsWithRaceResult(raceResult []Structs.RaceList) {
 		}
 
 
-		// fmt.Println("-------------------Payload Result : ", jsonObj.String())
+		fmt.Println("-------------------Payload Result : ", jsonObj.String())
 		
 		//Get the payload as a strong from JSON object
 		payload := jsonObj.String();
