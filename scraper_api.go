@@ -447,11 +447,7 @@ func PostAllPayloadsWithRaceResult(raceResult []Structs.RaceList) {
 
 			distanceNumber, _ := strconv.Atoi(subRaceObj.Distance)
 			raceDataObj["distance"] 		= distanceNumber
-			if subRaceObj.TrackCondition == "F" {
-				raceDataObj["track_condition"] 	= "Flat"
-			} else {
-				raceDataObj["track_condition"] 	= subRaceObj.TrackCondition
-			}
+			raceDataObj["track_condition"] 	= subRaceObj.TrackCondition
 
 			eventObj["race_data"] = raceDataObj
 
