@@ -189,6 +189,8 @@ func GetRaceDetailResult(subRaceObj Structs.SubRace, trackId string) Structs.Sub
 		trackResultObj.DogDamName 	= trackResult.Path("dogDam").Data().(string)
 		trackResultObj.Trainer 		= trackResult.Path("trainer").Data().(string)
 		trackResultObj.Color 		= trackResult.Path("dogColor").Data().(string)
+		trackResultObj.CalcRTimeS 		= trackResult.Path("calcRTimeS").Data().(string)
+		trackResultObj.SplitTime 		= trackResult.Path("splitTime").Data().(string)
 
 		//Temporary comment for further details
 		// dogObj := GetDogDetail( subRaceObj.RaceId, trackId, dogId, subRaceObj.RaceDate, subRaceObj.RTime)
@@ -497,6 +499,21 @@ func PostAllPayloadsWithRaceResult(raceResult []Structs.RaceList) {
 
 				competitor["metadata"] 	= metaDataObj
 
+					sectionObj := make(map[string]interface{})
+					sectionFirstObj := make(map[string]interface{})
+					sectionFirstObj["section_index"] = 0
+					splitTimeNumber, _ := strconv.ParseFloat(trackDetailObj.SplitTime, 64)
+					sectionFirstObj["time"] = splitTimeNumber
+					sectionObj["Section 1"] = sectionFirstObj
+
+					sectionSecondObj := make(map[string]interface{})
+					sectionSecondObj["section_index"] = 1
+					calcRTimeSNumber, _ := strconv.ParseFloat(trackDetailObj.CalcRTimeS, 64)
+					sectionSecondObj["time"] = float64(int((calcRTimeSNumber - splitTimeNumber) * 100)) / 100
+					sectionObj["Finsh"] = sectionSecondObj
+
+				competitor["section_data"] 	= sectionObj
+
 				competitorsArray = append(competitorsArray, competitor)
 			}
 			eventObj["competitors"] = competitorsArray
@@ -505,7 +522,9 @@ func PostAllPayloadsWithRaceResult(raceResult []Structs.RaceList) {
 		}
 
 
-		fmt.Println("-------------------Payload Result : ", jsonObj.String())
+		// fmt.Println("-------------------Payload Result : ", jsonObj.String())
+
+		// continue;
 		
 		//Get the payload as a strong from JSON object
 		payload := jsonObj.String();
