@@ -32,6 +32,10 @@ type TrackResult struct {
 	Trainer			string
 	Color			string
 
+	CalcRTimeS		string
+	SplitTime		string
+
+
 	Dog				Dog
 }
 
