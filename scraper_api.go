@@ -9,10 +9,15 @@ import (
 	"net/url"
 	"time"
 	"io/ioutil"
-	"github.com/Jeffail/gabs"
 	"strings"
 	"bytes"
 	"strconv"
+
+	"os"
+	// "encoding/csv"
+
+	"github.com/gocarina/gocsv"
+	"github.com/Jeffail/gabs"
 
 	Structs "./scrapstruct"
 )
@@ -54,7 +59,7 @@ func sendGetRequestWithURL(url string) []byte {
 	return body
 }
 
-func GetRaceResult() []Structs.RaceList {
+func GetRaceResult(isFetchHistoricalData bool) []Structs.RaceList {
 	strYesterday := time.Now().AddDate(0, 0, -1).Format("2006-01-02")
 	getResultUrl := fmt.Sprintf("http://greyhoundbet.racingpost.com/results/blocks.sd?r_date=%s&blocks=header,meetings&_=1", strYesterday);
 
@@ -99,7 +104,7 @@ func GetRaceResult() []Structs.RaceList {
 				subRaceObj.TrackCondition = subRace.Path("raceType").Data().(string)
 
 				//Get Race Details 
-				subRaceObj = GetRaceDetailResult(subRaceObj, raceObj.TrackId)
+				subRaceObj = GetRaceDetailResult(subRaceObj, raceObj.TrackId, isFetchHistoricalData)
 
 				raceObj.Races = append(raceObj.Races, subRaceObj)
 			}
@@ -113,7 +118,7 @@ func GetRaceResult() []Structs.RaceList {
 	return raceList;
 }
 
-func GetRaceDetailResult(subRaceObj Structs.SubRace, trackId string) Structs.SubRace{
+func GetRaceDetailResult(subRaceObj Structs.SubRace, trackId string, isFetchHistoricalData bool) Structs.SubRace{
 
 	paramStr := "&race_id=" + subRaceObj.RaceId
 	paramStr += "&track_id=" + trackId
@@ -193,8 +198,11 @@ func GetRaceDetailResult(subRaceObj Structs.SubRace, trackId string) Structs.Sub
 		trackResultObj.SplitTime 		= trackResult.Path("splitTime").Data().(string)
 
 		//Temporary comment for further details
-		// dogObj := GetDogDetail( subRaceObj.RaceId, trackId, dogId, subRaceObj.RaceDate, subRaceObj.RTime)
-		// trackResultObj.Dog = dogObj
+		if isFetchHistoricalData == true {
+			dogObj := GetDogDetail( subRaceObj.RaceId, trackId, dogId, subRaceObj.RaceDate, subRaceObj.RTime)
+			trackResultObj.Dog = dogObj
+		}
+		
 
 		trackObj.Results = append(trackObj.Results, trackResultObj)
 	}
@@ -243,15 +251,25 @@ func GetDogDetail(raceId string, trackId string, dogId string, r_date string, r_
 	for _, form := range formsInfo {
 
 		var dogFormObj Structs.DogForm
-		dogFormObj.Date 			= form.Path("rFormDatetime").Data().(string)
+		dateString := form.Path("rFormDatetime").Data().(string)
+		layout 	:= "2006-01-02 15:04"
+		t, _ := time.Parse(layout, dateString)
+
+		dogFormObj.Date 			= t.Format("02/01/06")
 		dogFormObj.TrackName 	 	= form.Path("trackShortName").Data().(string)
 		dogFormObj.Distance			= form.Path("distMetre").Data().(string)
 		dogFormObj.Bends			= form.Path("bndPos").Data().(string)
 		dogFormObj.FinishPosition	= form.Path("rOutcomeDesc").Data().(string)
 		dogFormObj.CompetitorName 	= form.Path("otherDogName").Data().(string)
 		dogFormObj.Weight			= form.Path("weight").Data().(string)
-		dogFormObj.FinishTime		= form.Path("winnersTimeS").Data().(string)
-
+		dogFormObj.SplitTime		= form.Path("secTimeS").Data().(string)
+		dogFormObj.SectionOneTime	= dogFormObj.SplitTime
+		
+		calcRTimeS := form.Path("calcRTimeS").Data().(string)
+		splitTimeNumber, _ := strconv.ParseFloat(dogFormObj.SplitTime, 64)
+		calcRTimeSNumber, _ := strconv.ParseFloat(calcRTimeS, 64)
+		finishTime := float64(int((calcRTimeSNumber - splitTimeNumber) * 100)) / 100
+		dogFormObj.FinishTime		= strconv.FormatFloat(finishTime, 'f', -1, 64)
 		dogObj.Forms = append(dogObj.Forms, dogFormObj)
 	}
 
@@ -443,7 +461,7 @@ func PostAllPayloadsWithRaceResult(raceResult []Structs.RaceList) {
 			raceDataObj := make(map[string]interface{})
 			raceDataObj["race_class"] 			= subRaceObj.RaceClass
 			raceDataObj["distance_unit"] 		= "meters"
-			prizeNumber, _ := strconv.Atoi(subRaceObj.RacePrize)
+			prizeNumber, _ := strconv.ParseFloat(subRaceObj.RacePrize, 64)
 			raceDataObj["prize_money"] 			= prizeNumber
 			raceDataObj["prize_money_currency"] = "EUR"
 
@@ -541,15 +559,51 @@ func PostAllPayloadsWithRaceResult(raceResult []Structs.RaceList) {
 	}
 }
 
+func createCSVForHistorialData(raceResult []Structs.RaceList) {
+	var formsData []Structs.DogForm
+	for _, raceObj := range raceResult {
+		for _, subRaceObj := range raceObj.Races {
+			for _, trackDetailObj := range subRaceObj.TrackDetail.Results {
+				formsData = append(formsData, trackDetailObj.Dog.Forms...)		
+			}
+		}
+	}
+
+	clientsFile, err := os.OpenFile("clients.csv", os.O_RDWR|os.O_CREATE, os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
+	defer clientsFile.Close()
+
+	err = gocsv.MarshalFile(&formsData, clientsFile) // Use this to save the CSV back to the file
+	if err != nil {
+		panic(err)
+	}
+}
+
+func checkError(message string, err error) {
+    if err != nil {
+        fmt.Println(message)
+    }
+}
+
 func main() {
+
+	isFetchHistoricalData := false
 	//Get Race result using a scrapper
-	raceResult := GetRaceResult()
+	raceResult := GetRaceResult(isFetchHistoricalData)
 	if raceResult == nil {
 		fmt.Println("Race List is nil")
 		return
 	}
-
 	fmt.Println("RaceResults are all fetched!!!-------")
+
+
 	// fmt.Println("-------------------raceResult : ", raceResult[0])
-	PostAllPayloadsWithRaceResult(raceResult);
+	if isFetchHistoricalData == true {
+		createCSVForHistorialData(raceResult)
+	} else {
+		PostAllPayloadsWithRaceResult(raceResult);
+	}
+	
 }
