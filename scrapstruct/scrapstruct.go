@@ -1,14 +1,17 @@
 package scrapstruct
 
 type DogForm struct {
-	Date 			string
-	TrackName		string
-	Distance		string
-	Bends			string
-	FinishPosition	string
-	CompetitorName 	string
-	Weight			string
-	FinishTime		string
+	Date 			string `csv:"Date"`
+	TrackName		string `csv:"Track"`
+	Distance		string `csv:"Distance"`
+	SplitTime		string `csv:"Split"`
+	Bends			string `csv:"Sections"`
+	FinishPosition	string `csv:"-"`
+	CompetitorName 	string `csv:"-"`
+	Weight			string `csv:"Weight"`
+	SectionOneTime	string `csv:"Section 1 Time"`
+	FinishTime		string `csv:"Finish Time"`
+	
 }
 
 type Dog struct {
