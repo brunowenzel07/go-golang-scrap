@@ -20,6 +20,7 @@ $ go get -u github.com/knq/chromedp
 For API based scrapping engine : 
 ```sh
 $ go get github.com/Jeffail/gabs
+$ go get -u github.com/gocarina/gocsv
 ```
 
 ### How to run
