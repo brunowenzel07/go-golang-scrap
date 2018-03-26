@@ -589,7 +589,7 @@ func checkError(message string, err error) {
 
 func main() {
 
-	isFetchHistoricalData := false
+	isFetchHistoricalData := true
 	//Get Race result using a scrapper
 	raceResult := GetRaceResult(isFetchHistoricalData)
 	if raceResult == nil {
